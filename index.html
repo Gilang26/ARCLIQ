@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ARCLIQ — Arc Testnet DEX (UI)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --accent:#2596BE; --accent-2:#2fa7cf;
+    --muted:#617184; --text:#0f172a; --success:#10b981; --danger:#ef4444;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text);margin:0;padding:16px}
+  .wrap{max-width:920px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px}
+  h1{margin:0;font-size:18px}
+  .sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 20px rgba(15,23,42,0.06);padding:12px;margin-top:12px;border:1px solid rgba(15,23,42,0.03)}
+  .row{display:flex;gap:8px}
+  .col{flex:1}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  input[type=text], select, input[type=number]{
+    width:100%;padding:10px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:transparent;color:var(--text)
+  }
+  button{background:var(--accent);border:0;color:white;padding:10px 12px;border-radius:10px;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);color:var(--text)}
+  .small{font-size:12px;color:var(--muted)}
+  .token-box{display:flex;gap:8px;align-items:center}
+  .token-meta{display:flex;flex-direction:column}
+  .flex-between{display:flex;justify-content:space-between;align-items:center}
+  .est{margin-top:8px;font-size:13px;color:var(--muted)}
+  .notice{font-size:13px;padding:8px;border-radius:8px;background:linear-gradient(180deg, rgba(37,150,190,0.06), rgba(37,150,190,0.02));color:var(--text);margin-top:8px}
+  .log{font-family:monospace;background:#071b26;color:#bfeef9;padding:8px;border-radius:8px;margin-top:8px;font-size:12px;overflow:auto}
+  footer{margin-top:16px;text-align:center;color:var(--muted);font-size:12px}
+  @media(max-width:720px){header{flex-direction:column;align-items:flex-start}.row{flex-direction:column}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">AR</div>
+        <div>
+          <h1>ARCLIQ</h1>
+          <div class="sub">Arc Testnet DEX — connect wallet, simulate swap, or swap via Router</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="small">Network: <strong>Arc Testnet (5042002)</strong></div>
+        <button id="connectBtn">Connect Wallet</button>
+      </div>
+    </header>
+
+    <!-- Settings / Router -->
+    <div class="card">
+      <div class="flex-between">
+        <div><strong>Settings</strong><div class="small">Masukkan alamat Router (opsional) untuk swap nyata</div></div>
+        <div class="small">RPC: <code>https://rpc.testnet.arc.network</code></div>
+      </div>
+      <label for="router">Router contract (UniswapV2-style) — kosong = simulate only</label>
+      <input id="router" type="text" placeholder="0x... (Router contract address)">
+
+      <div style="margin-top:10px" class="row">
+        <div class="col">
+          <label for="deadline">Slippage (%)</label>
+          <input id="slippage" type="number" value="0.5" step="0.1">
+        </div>
+        <div style="width:140px">
+          <label for="deadlineSec">Deadline (min)</label>
+          <input id="deadlineSec" type="number" value="20">
+        </div>
+      </div>
+    </div>
+
+    <!-- Token selector -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Swap</strong><div class="small">Pilih token A → token B (ERC-20)</div></div>
+        <div class="small">Estimated output calculated from on-chain pair if available</div>
+      </div>
+
+      <div style="margin-top:10px" class="row">
+        <div class="col">
+          <label for="tokenA">Token A (From) — address</label>
+          <input id="tokenA" type="text" placeholder="0x... or leave blank for native (USDC)">
+        </div>
+        <div style="width:140px">
+          <label for="amtA">Amount</label>
+          <input id="amtA" type="number" placeholder="0.0" step="0.0001">
+        </div>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <div class="col">
+          <label for="tokenB">Token B (To) — address</label>
+          <input id="tokenB" type="text" placeholder="0x... or leave blank for native (USDC)">
+        </div>
+        <div style="width:140px">
+          <label>&nbsp;</label>
+          <input id="slim" type="text" readonly placeholder=" " class="ghost">
+        </div>
+      </div>
+
+      <div class="est" id="estimation">Estimated output: —</div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button id="btnSim">Simulate (No TX)</button>
+        <button id="btnApprove" class="ghost">Approve Token A</button>
+        <button id="btnSwap">Swap (via Router)</button>
+      </div>
+
+      <div class="notice" id="notice">
+        Tips: kalau belum punya Router, biarkan kosong dan pakai tombol <strong>Simulate</strong> untuk cek harga.
+      </div>
+
+      <div class="log" id="log">Logs will appear here...</div>
+    </div>
+
+    <!-- Balances / token info -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Token Info & Balances</strong></div>
+        <div class="small">Paste token address & tekan Connect</div>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <div class="col">
+          <label>Token A Info</label>
+          <div id="metaA" class="small">—</div>
+        </div>
+        <div class="col">
+          <label>Token B Info</label>
+          <div id="metaB" class="small">—</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>ARCLIQ • Arc Testnet • Use at your own risk — for testing only</footer>
+  </div>
+
+<script type="module">
+import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.min.js";
+
+// --- CONFIG ---
+const RPC_URL = "https://rpc.testnet.arc.network";
+const CHAIN_ID = 5042002;
+const providerRPC = new ethers.JsonRpcProvider(RPC_URL);
+
+// minimal ERC20 ABI
+const ERC20 = [
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function balanceOf(address) view returns (uint256)",
+  "function allowance(address,address) view returns (uint256)",
+  "function approve(address,uint256) returns (bool)"
+];
+
+// UniswapV2 pair ABI minimal
+const PAIR_ABI = [
+  "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
+  "function token0() view returns (address)",
+  "function token1() view returns (address)"
+];
+
+// UniswapV2 router minimal ABI (swapExactTokensForTokens)
+const ROUTER_ABI = [
+  "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) payable returns (uint256[] memory amounts)",
+  "function WETH() view returns (address)"
+];
+
+// helpers: DOM
+const $ = id => document.getElementById(id);
+const connectBtn = $("connectBtn");
+const routerInput = $("router");
+const tokenAInput = $("tokenA"), tokenBInput = $("tokenB"), amtAInput = $("amtA");
+const btnSim = $("btnSim"), btnSwap = $("btnSwap"), btnApprove = $("btnApprove");
+const estimation = $("estimation"), logEl = $("log");
+const metaA = $("metaA"), metaB = $("metaB");
+const slippageInput = $("slippage"), deadlineMin = $("deadlineSec");
+
+// state
+let walletAddr = null;
+let signer = null;
+let ethProvider = null;
+
+// util logging
+function log(msg, err=false){
+  const time = new Date().toLocaleTimeString();
+  logEl.innerHTML += `[${time}] ${msg}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+  if(err) console.error(msg);
+}
+
+// connect wallet
+async function connectWallet(){
+  if(!window.ethereum) return alert("No injected wallet found (MetaMask / OKX). Use mobile wallet browser.");
+  ethProvider = new ethers.BrowserProvider(window.ethereum);
+  await ethProvider.send("eth_requestAccounts", []);
+  signer = await ethProvider.getSigner();
+  walletAddr = await signer.getAddress();
+  const network = await ethProvider.getNetwork();
+  log(`Connected: ${walletAddr} (chainId ${network.chainId})`);
+  connectBtn.textContent = walletAddr.slice(0,6) + "…" + walletAddr.slice(-4);
+  // warn if wrong chain
+  if(network.chainId !== CHAIN_ID){
+    log(`⚠️ Wrong network. Please switch wallet to Arc Testnet (chainId ${CHAIN_ID}).`, true);
+    alert("Switch your wallet network to Arc Testnet (chainId 5042002)");
+  }
+  // update token metas if addresses present
+  if(tokenAInput.value.trim()) await loadTokenMeta(tokenAInput.value.trim(), 'A');
+  if(tokenBInput.value.trim()) await loadTokenMeta(tokenBInput.value.trim(), 'B');
+}
+
+// load token meta & balance
+async function loadTokenMeta(addr, which){
+  try {
+    const tokenAddr = addr.trim();
+    const provider = signer ? ethProvider : providerRPC;
+    if(!ethers.isAddress(tokenAddr)) {
+      (which==='A')? metaA.innerText = "Invalid address" : metaB.innerText = "Invalid address";
+      return;
+    }
+    const c = new ethers.Contract(tokenAddr, ERC20, provider);
+    const [name, symbol, decimals] = await Promise.all([c.name(), c.symbol(), c.decimals()]);
+    let balance = "—";
+    if(walletAddr){
+      const bal = await c.balanceOf(walletAddr);
+      balance = ethers.formatUnits(bal, decimals);
+    }
+    const text = `${name} (${symbol}) • decimals:${decimals} • balance:${balance}`;
+    if(which==='A') metaA.innerText = text; else metaB.innerText = text;
+    log(`Token ${which} meta loaded: ${name} / ${symbol}`);
+  } catch(err){
+    (which==='A')? metaA.innerText = "Error reading token" : metaB.innerText = "Error reading token";
+    log("Error loadTokenMeta: " + (err.message||err), true);
+  }
+}
+
+// estimate via pair reserves (simulate)
+async function simulateSwap(){
+  try {
+    const aAddr = tokenAInput.value.trim();
+    const bAddr = tokenBInput.value.trim();
+    const amt = Number(amtAInput.value);
+    if(!aAddr || !bAddr) return alert("Isi token A & token B addresses");
+    if(!amt || amt <= 0) return alert("Masukkan amount > 0");
+    // try find pair via router (if router exists) OR ask user to provide pair address manually (for now we'll try compute via factory not available).
+    // We'll attempt to find pair by checking common pair addresses? Simpler: ask user to input pair address by replacing router field with pair if needed.
+    // Strategy: if router provided, try get WETH and path via router; else try to compute via on-chain pair address pattern (NOT reliable).
+    // So we try basic approach: check if user has provided pair contract in router field (if it's a pair), otherwise show message to paste pair address in router field for reserve lookup.
+    const maybePair = routerInput.value.trim();
+    if(maybePair && ethers.isAddress(maybePair)){
+      // try treat routerInput as pair
+      const pair = new ethers.Contract(maybePair, PAIR_ABI, providerRPC);
+      const token0 = await pair.token0(); const token1 = await pair.token1();
+      const reserves = await pair.getReserves();
+      // find which reserve is which
+      let reserveIn, reserveOut;
+      let decIn = 18, decOut = 18;
+      if(token0.toLowerCase() === aAddr.toLowerCase()){
+        reserveIn = reserves.reserve0; reserveOut = reserves.reserve1;
+        // read decimals
+        try { decIn = await (new ethers.Contract(token0, ERC20, providerRPC)).decimals(); decOut = await (new ethers.Contract(token1, ERC20, providerRPC)).decimals(); } catch(e){}
+      } else if(token1.toLowerCase() === aAddr.toLowerCase()){
+        reserveIn = reserves.reserve1; reserveOut = reserves.reserve0;
+        try { decIn = await (new ethers.Contract(token1, ERC20, providerRPC)).decimals(); decOut = await (new ethers.Contract(token0, ERC20, providerRPC)).decimals(); } catch(e){}
+      } else {
+        return alert("Pair contract provided does not match token addresses. Provide proper pair contract address in Router field for reserve-based estimate.");
+      }
+      // compute Uniswap V2 formula
+      const amountInWithFee = BigInt(Math.floor(amt * (10**decIn))) * 997n;
+      const numerator = amountInWithFee * BigInt(reserveOut);
+      const denominator = (BigInt(reserveIn) * 1000n) + amountInWithFee;
+      const amountOut = numerator / denominator;
+      const humanOut = Number(amountOut) / (10**decOut);
+      estimation.innerText = `Estimated output: ≈ ${humanOut} (using pair ${maybePair})`;
+      log(`Simulated output: ${humanOut}`);
+      return;
+    }
+    // fallback: no pair specified
+    estimation.innerText = "No pair contract provided — paste pair address into Router field to simulate using reserves, or deploy pair.";
+    log("Simulate skipped: no pair contract given in Router field.");
+  } catch(err){
+    log("Simulate error: " + (err.message||err), true);
+  }
+}
+
+// approve flow (token A -> router)
+async function doApprove(){
+  try {
+    if(!walletAddr) return alert("Connect wallet first");
+    const tokenAddr = tokenAInput.value.trim();
+    const routerAddr = routerInput.value.trim();
+    if(!ethers.isAddress(tokenAddr) || !ethers.isAddress(routerAddr)) return alert("Token A or Router address invalid");
+    const token = new ethers.Contract(tokenAddr, ERC20, signer);
+    const amount = ethers.parseUnits("1000000000"); // large approve
+    const tx = await token.approve(routerAddr, amount);
+    log(`Approve tx sent: ${tx.hash}`);
+    await tx.wait();
+    log(`Approve confirmed: ${tx.hash}`);
+  } catch(err){
+    log("Approve failed: " + (err.message||err), true);
+  }
+}
+
+// perform real swap via router (UniswapV2-style)
+async function doSwapReal(){
+  try {
+    if(!walletAddr) return alert("Connect wallet first");
+    const routerAddr = routerInput.value.trim();
+    if(!ethers.isAddress(routerAddr)) return alert("Please provide Router contract address for real swap");
+    const router = new ethers.Contract(routerAddr, ROUTER_ABI, signer);
+    const aAddr = tokenAInput.value.trim(), bAddr = tokenBInput.value.trim();
+    if(!ethers.isAddress(aAddr) || !ethers.isAddress(bAddr)) return alert("Invalid token addresses");
+    const amt = Number(amtAInput.value);
+    if(!amt || amt<=0) return alert("Amount must be > 0");
+    // read decimals
+    const tokenA = new ethers.Contract(aAddr, ERC20, providerRPC);
+    const decimalsA = await tokenA.decimals().catch(()=>18);
+    const amountIn = ethers.parseUnits(String(amt), decimalsA);
+    // compute min amount out by quick on-chain simulate via pair address in router field? For simplicity ask user to accept slippage
+    const slippagePercent = Number(slippageInput.value) || 0.5;
+    // we will set amountOutMin = 0 to avoid revert risk OR estimate via simulation if pair provided
+    let amountOutMin = 0n;
+    // try simulation if Router field points to pair earlier; else safe: set amountOutMin to 0 with warning
+    if(!routerInput.value.trim()) {
+      const ok = confirm("Router not provided — cannot perform real swap. Paste Router contract address and ensure liquidity exists.");
+      if(!ok) return;
+    }
+    // path: [aAddr, bAddr]
+    const path = [aAddr, bAddr];
+    const to = walletAddr;
+    const deadline = Math.floor(Date.now()/1000) + (Number(deadlineMin.value)||20)*60;
+    // check allowance
+    const tokenWithSigner = new ethers.Contract(aAddr, ERC20, signer);
+    const allowance = await tokenWithSigner.allowance(walletAddr, routerAddr);
+    if(allowance < amountIn){
+      const ok = confirm("Router not approved to spend token A. Approve now?");
+      if(ok){
+        const txApp = await tokenWithSigner.approve(routerAddr, amountIn);
+        log("Approve sent: " + txApp.hash);
+        await txApp.wait();
+        log("Approve confirmed: " + txApp.hash);
+      } else {
+        return;
+      }
+    }
+    log("Sending swap tx via router...");
+    const tx = await router.swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline, {gasLimit: 800000});
+    log("Swap tx sent: " + tx.hash);
+    await tx.wait();
+    log("Swap executed: " + tx.hash);
+  } catch(err){
+    log("Swap failed: " + (err.data?.message || err.message || err), true);
+  }
+}
+
+// events
+connectBtn.addEventListener("click", connectWallet);
+tokenAInput.addEventListener("change", ()=> loadTokenMeta(tokenAInput.value.trim(), 'A'));
+tokenBInput.addEventListener("change", ()=> loadTokenMeta(tokenBInput.value.trim(), 'B'));
+btnSim.addEventListener("click", simulateSwap);
+btnApprove.addEventListener("click", doApprove);
+btnSwap.addEventListener("click", doSwapReal);
+
+// initial note
+log("ARCLIQ UI ready. Connect wallet to use advanced features. Use Router field for real swaps (UniswapV2-style). To simulate price using reserves: paste Pair contract address into Router field.");
+</script>
+</body>
+</html>
