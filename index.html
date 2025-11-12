@@ -3,57 +3,111 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ARCLIQ Connect — Diagnostic Build</title>
+<title>ARCLIQ — Arc Testnet</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body{font-family:sans-serif;background:#f3f6ff;margin:0;padding:2rem;color:#111}
-button{background:#5468ff;color:#fff;border:0;padding:12px 20px;
-border-radius:10px;font-size:16px;cursor:pointer}
-pre{background:#061e2e;color:#bfeef9;padding:12px;border-radius:10px;
-min-height:150px;white-space:pre-wrap}
+:root{
+  --bg:#f6fbff;--card:#ffffff;--accent:#5468ff;--muted:#64748b;--radius:12px;
+}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:18px;color:#0f172a}
+.wrap{max-width:900px;margin:0 auto}
+h1{margin:0;font-size:24px}
+.subtitle{margin:4px 0 16px;color:var(--muted);font-size:13px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 4px 14px rgba(10,20,30,.06);padding:16px;margin-bottom:12px}
+button,input,select{font-family:inherit;font-size:14px;border-radius:10px;padding:10px;border:1px solid #e6eef6}
+button{background:var(--accent);color:#fff;border:0;cursor:pointer;padding:10px 12px}
+.row{display:flex;gap:8px}
+.col{flex:1}
+.small{font-size:13px;color:var(--muted)}
+pre#logs{background:#071b26;color:#bfeef9;padding:10px;border-radius:10px;max-height:240px;overflow:auto}
+footer{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+@media(max-width:700px){.row{flex-direction:column}}
 </style>
 </head>
 <body>
-<h1>ARCLIQ Connect Debug</h1>
-<button id="connect">🔗 Connect MetaMask</button>
-<pre id="log">Initializing test...</pre>
+<div class="wrap">
+  <h1>ARCLIQ</h1>
+  <div class="subtitle">Powered by ARC Network (Testnet)</div>
 
+  <div class="card">
+    <button id="connectBtn">🔗 Connect MetaMask</button>
+    <div id="walletInfo" class="small" style="margin-top:8px">Belum terhubung</div>
+  </div>
+
+  <div class="card">
+    <strong>Logs</strong>
+    <pre id="logs">ARCLIQ ready. Connect wallet to begin.</pre>
+  </div>
+
+  <footer>ARCLIQ DEX — Arc Testnet</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 <script>
-const logBox=document.getElementById("log");
-function log(msg){
-  logBox.textContent+="\n"+msg;
-  logBox.scrollTop=logBox.scrollHeight;
+let provider=null,signer=null,userAddress=null;
+const connectBtn=document.getElementById("connectBtn");
+const walletInfo=document.getElementById("walletInfo");
+const logs=document.getElementById("logs");
+function log(msg){logs.textContent+="\n"+msg;logs.scrollTop=logs.scrollHeight;}
+
+function updateUIConnected(addr,chainId){
+  connectBtn.textContent="❌ Disconnect";
+  walletInfo.textContent=`Connected: ${addr} | chain ${chainId}`;
+  walletInfo.style.color="#0b6";
+}
+function updateUIDisconnected(){
+  connectBtn.textContent="🔗 Connect MetaMask";
+  walletInfo.textContent="Belum terhubung";
+  walletInfo.style.color="";
 }
 
-// Tes apakah window.ethereum terdeteksi
-if(typeof window.ethereum!=="undefined"){
-  log("✅ MetaMask terdeteksi di browser ini.");
-}else{
-  log("❌ MetaMask TIDAK terdeteksi! Pastikan buka di MetaMask app browser.");
-}
-
-// Pasang listener
-document.getElementById("connect").addEventListener("click",async()=>{
+async function connectWallet(){
   try{
-    if(!window.ethereum){log("❌ window.ethereum tidak ada!");return;}
-    log("⏳ Meminta izin koneksi ke MetaMask...");
-    const accounts=await window.ethereum.request({method:"eth_requestAccounts"});
-    const chainId=await window.ethereum.request({method:"eth_chainId"});
-    log("✅ Connected Address: "+accounts[0]);
-    log("🌐 Chain ID: "+chainId);
-  }catch(err){
-    log("❌ Gagal connect: "+(err.message||err));
-  }
+    if(!window.ethereum){alert("Install MetaMask");return;}
+    provider=new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts",[]);
+    signer=await provider.getSigner();
+    userAddress=await signer.getAddress();
+    const net=await provider.getNetwork();
+    updateUIConnected(userAddress,net.chainId);
+    log(`✅ Connected: ${userAddress} (chain ${net.chainId})`);
+    localStorage.setItem("arcliq_connected","1");
+  }catch(e){log("❌ Connect failed: "+(e.message||e));}
+}
+
+function disconnectWallet(){
+  provider=null;signer=null;userAddress=null;
+  updateUIDisconnected();
+  localStorage.removeItem("arcliq_connected");
+  log("❌ Disconnected (UI cleared). To fully revoke, remove site in MetaMask settings.");
+}
+
+connectBtn.addEventListener("click",async()=>{
+  if(!signer){await connectWallet();}else{disconnectWallet();}
 });
 
-// Tambah event log untuk deteksi perubahan account/chain
 if(window.ethereum){
-  window.ethereum.on('accountsChanged',(acc)=>{
-    log("🔄 Account berubah: "+JSON.stringify(acc));
+  window.ethereum.on("accountsChanged",(acc)=>{
+    if(acc.length===0){
+      disconnectWallet();
+      log("🔄 Account changed: none (disconnected)");
+    }else{
+      userAddress=acc[0];
+      provider && provider.getNetwork().then(net=>updateUIConnected(userAddress,net.chainId));
+      log("🔄 Account changed: "+JSON.stringify(acc));
+    }
   });
-  window.ethereum.on('chainChanged',(cid)=>{
-    log("🔄 Chain berubah: "+cid);
+  window.ethereum.on("chainChanged",(cid)=>{
+    const dec=parseInt(cid,16);
+    provider && provider.getNetwork().then(net=>updateUIConnected(userAddress||"unknown",dec));
+    log("🔄 Chain changed: "+cid+" ("+dec+")");
   });
 }
+
+if(localStorage.getItem("arcliq_connected")==="1"){connectWallet().catch(()=>{updateUIDisconnected();});}
+
+log("ARCLIQ loaded. Open in MetaMask browser (ARC Testnet).");
 </script>
 </body>
 </html>
