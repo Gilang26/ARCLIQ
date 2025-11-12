@@ -3,31 +3,30 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ARCLIQ — Minimal DEX (Uniswap-like)</title>
+<title>ARCLIQ — ARC DEX (Final)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#ffffff; --panel:#ffffff; --muted:#6b7280; --accent:#7c3aed; --glass: rgba(16,24,40,0.03);
+    --bg:#f6f7fb; --card:#ffffff; --muted:#6b7280; --accent:#7c3aed; --border:#e6eaf1; --text:#0f172a;
   }
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#f6f8fb 0%, #ffffff 100%);margin:0;color:#0f172a}
+  body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;color:var(--text)}
   .wrap{max-width:980px;margin:28px auto;padding:0 18px}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
-  .brand{font-weight:600;font-size:20px;letter-spacing:0.4px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .brand{font-weight:600;font-size:20px}
   .sub{color:var(--muted);font-size:12px}
   .container{display:flex;gap:20px}
-  .card{flex:1;background:var(--panel);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(16,24,40,0.06)}
+  .card{flex:1;background:var(--card);border-radius:12px;padding:18px;border:1px solid var(--border);box-shadow:0 6px 20px rgba(16,24,40,0.04)}
   h2{margin:0 0 8px;font-weight:600;font-size:16px}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  .row{display:flex;gap:8px;margin-bottom:10px}
-  input,select,button{font-family:inherit;font-size:14px;border-radius:10px;padding:12px;border:1px solid #e6eef6}
+  input,select,button{font-family:inherit;font-size:14px;border-radius:10px;padding:12px;border:1px solid var(--border)}
   input::placeholder{color:#cbd5e1}
   .full{width:100%}
   button.primary{background:var(--accent);color:#fff;border:0;padding:12px 14px;border-radius:10px;cursor:pointer}
-  button.ghost{background:transparent;border:1px solid #e6eef6;color:var(--muted);cursor:pointer;padding:10px 12px;border-radius:10px}
+  button.ghost{background:#fff;border:1px solid var(--border);color:var(--muted);cursor:pointer;padding:10px 12px;border-radius:10px}
   .muted{color:var(--muted);font-size:13px}
   .small{font-size:12px;color:#94a3b8}
-  #logs{margin-top:12px;background:#0b1220;color:#bfeef9;padding:12px;border-radius:10px;min-height:120px;white-space:pre-wrap;overflow:auto}
+  #logs{margin-top:12px;background:#071023;color:#bfeef9;padding:12px;border-radius:10px;min-height:120px;white-space:pre-wrap;overflow:auto}
   @media(max-width:900px){.container{flex-direction:column}}
 </style>
 </head>
@@ -36,10 +35,10 @@
     <header>
       <div>
         <div class="brand">ARCLIQ</div>
-        <div class="sub">Powered by ARC Network (Testnet) — minimal Uniswap-like</div>
+        <div class="sub">ARC Testnet — Minimal Uniswap-style DEX</div>
       </div>
       <div>
-        <button id="connectBtn" class="primary">🔗 Connect MetaMask</button>
+        <button id="connectBtn" class="primary">🔗 Connect</button>
       </div>
     </header>
 
@@ -47,25 +46,23 @@
       <!-- Swap -->
       <div class="card">
         <h2>Swap</h2>
-        <div class="small muted">Swap between USDC ↔ ARCLIQ</div>
+        <div class="small muted">USDC ↔ ARCLIQ</div>
 
-        <div style="margin-top:12px">
-          <label>Direction</label>
-          <select id="swapDir" class="full" style="margin-bottom:10px;padding:10px">
-            <option value="usdc->token">USDC → ARCLIQ</option>
-            <option value="token->usdc">ARCLIQ → USDC</option>
-          </select>
+        <label style="margin-top:12px">Direction</label>
+        <select id="swapDir" class="full" style="margin-bottom:10px;padding:10px">
+          <option value="usdc->token">USDC → ARCLIQ</option>
+          <option value="token->usdc">ARCLIQ → USDC</option>
+        </select>
 
-          <label>Amount (input)</label>
-          <input id="swapAmount" placeholder="amount in wei (1e18 = 1 token)" class="full" />
+        <label>Amount (human)</label>
+        <input id="swapAmount" placeholder="e.g. 1.5" class="full" />
 
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button id="approveSwapBtn" class="ghost">Approve Input</button>
-            <button id="swapBtn" class="primary">🔁 Swap</button>
-          </div>
-
-          <div class="small muted" style="margin-top:10px">Tip: approve input token before swap (unless input is native USDC).</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="approveSwapBtn" class="ghost">Approve</button>
+          <button id="swapBtn" class="primary">🔁 Swap</button>
         </div>
+
+        <div class="small muted" style="margin-top:10px">If input is native USDC, no approve required.</div>
       </div>
 
       <!-- Add Liquidity -->
@@ -73,32 +70,30 @@
         <h2>Add Liquidity</h2>
         <div class="small muted">Create pair and add liquidity (USDC ↔ ARCLIQ)</div>
 
-        <div style="margin-top:12px">
-          <label>Token A (base)</label>
-          <input id="pairTokenA" value="0x3600000000000000000000000000000000000000" class="full" />
+        <label style="margin-top:12px">Token A (base)</label>
+        <input id="pairTokenA" value="0x3600000000000000000000000000000000000000" class="full" />
 
-          <label style="margin-top:8px">Token B</label>
-          <input id="pairTokenB" value="0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3" class="full" />
+        <label style="margin-top:8px">Token B</label>
+        <input id="pairTokenB" value="0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3" class="full" />
 
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button id="createPairBtn" class="ghost">🧱 Create Pair</button>
-            <button id="getPairBtn" class="ghost">🔎 Get Pair</button>
-          </div>
-
-          <label style="margin-top:12px">Amount A (wei)</label>
-          <input id="amtA" value="1000000000000000000" class="full" />
-
-          <label style="margin-top:8px">Amount B (wei)</label>
-          <input id="amtB" value="1000000000000000000" class="full" />
-
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button id="approveA" class="ghost">Approve A</button>
-            <button id="approveB" class="ghost">Approve B</button>
-            <button id="addLpBtn" class="primary">➕ Add Liquidity</button>
-          </div>
-
-          <div id="pairAddr" class="small muted" style="margin-top:10px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="createPairBtn" class="ghost">🧱 Create Pair</button>
+          <button id="getPairBtn" class="ghost">🔎 Get Pair</button>
         </div>
+
+        <label style="margin-top:12px">Amount A (human)</label>
+        <input id="amtA" value="1" class="full" />
+
+        <label style="margin-top:8px">Amount B (human)</label>
+        <input id="amtB" value="1" class="full" />
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="approveA" class="ghost">Approve A</button>
+          <button id="approveB" class="ghost">Approve B</button>
+          <button id="addLpBtn" class="primary">➕ Add LP</button>
+        </div>
+
+        <div id="pairAddr" class="small muted" style="margin-top:10px"></div>
       </div>
     </div>
 
@@ -109,35 +104,24 @@
       </div>
       <pre id="logs">Ready</pre>
     </div>
-
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 <script>
-/* === QUICK DEBUG catcher (writes errors to #logs so mobile browser can show them) === */
-window.onerror = function (msg, url, line, col, error) {
-  const logs = document.getElementById("logs");
-  if (logs) {
-    logs.textContent += "\\nJS ERROR: " + msg + " @ " + line + ":" + col + (error && error.stack ? "\\nSTACK: " + error.stack : "");
-    logs.scrollTop = logs.scrollHeight;
-  }
-};
-
-/* === CONFIG — replace addresses with the real ones you deployed === */
-/* Factory left as previous deploy (keep if correct). If different, change it. */
+/* ==================== CONFIG ==================== */
+/* Keep addresses real — no placeholders */
 const FACTORY = "0xA7e452f27836AED20081345B9149d4D1a722BF2a";
-const ROUTER  = "0xbdcb8cba012bc0c979875fef879b05e050e76d7d"; // <- router you gave
-const NATIVE_USDC = "0x3600000000000000000000000000000000000000"; // USDC native (faucet)
-const TOKEN    = "0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3"; // ARCLIQ
+const ROUTER  = "0xbdcb8cba012bc0c979875fef879b05e050e76d7d";
+const NATIVE_USDC = "0x3600000000000000000000000000000000000000"; // treated as native
+const TOKEN   = "0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3"; // ARCLIQ
 
-/* === ABIs (matching signatures you provided) === */
+/* ==================== ABIs ==================== */
 const ERC20_ABI = [
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
   "function approve(address,uint256) returns (bool)",
-  "function transferFrom(address,address,uint256) returns (bool)",
-  "function balanceOf(address) view returns (uint)"
+  "function balanceOf(address) view returns (uint256)"
 ];
 const FACTORY_ABI = [
   "function createPair(address,address) returns (address)",
@@ -149,97 +133,132 @@ const ROUTER_ABI = [
   "function swap(address tokenIn, address tokenOut, uint256 amountIn) external returns(uint256)"
 ];
 
-/* === state & UI refs === */
-let provider=null, signer=null, userAddress=null;
-const connectBtn=document.getElementById("connectBtn");
-const walletInfo=document.getElementById("walletInfo");
-const logs=document.getElementById("logs");
+/* ==================== STATE ==================== */
+let provider = null;
+let signer = null;
+let userAddress = null;
+const decimalsCache = {}; // tokenAddress -> decimals
 
-function log(msg){ logs.textContent += "\\n" + msg; logs.scrollTop = logs.scrollHeight; }
-function setProcessing(btn, isProcessing, text){
-  if(isProcessing){ btn.dataset.orig = btn.textContent; btn.textContent = text || "Processing..."; btn.disabled = true; }
-  else { btn.textContent = btn.dataset.orig || btn.textContent; btn.disabled = false; }
+/* ==================== UI HELPERS ==================== */
+const logs = document.getElementById("logs");
+const walletInfo = document.getElementById("walletInfo");
+function log(msg){
+  const t = new Date().toISOString().replace('T',' ').slice(0,19);
+  logs.textContent += `\n[${t}] ${msg}`;
+  logs.scrollTop = logs.scrollHeight;
+}
+function setProcessing(btn, isLoading, text){
+  if(!btn) return;
+  if(isLoading){
+    btn.dataset.orig = btn.textContent;
+    btn.textContent = text || "Processing...";
+    btn.disabled = true;
+  } else {
+    btn.textContent = btn.dataset.orig || btn.textContent;
+    btn.disabled = false;
+  }
 }
 
-/* UI update connect/disconnect */
-function updateUIConnected(addr, chainId){
-  connectBtn.textContent = "❌ Disconnect";
-  walletInfo.textContent = `${addr} | chain ${chainId}`;
-}
-function updateUIDisconnected(){
-  connectBtn.textContent = "🔗 Connect MetaMask";
-  walletInfo.textContent = "Not connected";
-}
+/* global error catcher — visible in logs (useful for MetaMask mobile) */
+window.onerror = function (msg, url, line, col, err) {
+  logs.textContent += `\nJS ERROR: ${msg} @ ${line}:${col}` + (err && err.stack ? `\nSTACK: ${err.stack}` : '');
+  logs.scrollTop = logs.scrollHeight;
+};
 
-/* Connect / Disconnect */
+/* ==================== PROVIDER / CONNECT ==================== */
 async function connectWallet(){
   try{
-    if(!window.ethereum) { alert("Install MetaMask"); return; }
+    if(!window.ethereum) { alert("MetaMask not found"); return; }
     provider = new ethers.BrowserProvider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
     const net = await provider.getNetwork();
-    updateUIConnected(userAddress, net.chainId);
-    log("✅ Connected: " + userAddress + " (chain " + net.chainId + ")");
+    walletInfo.textContent = `${userAddress} | chain ${net.chainId}`;
+    document.getElementById("connectBtn").textContent = "❌ Disconnect";
+    log(`✅ Connected: ${userAddress} (chain ${net.chainId})`);
     localStorage.setItem("arcliq_connected","1");
   }catch(e){ log("❌ Connect failed: " + (e.message || e)); }
 }
 function disconnectWallet(){
   provider = null; signer = null; userAddress = null;
-  updateUIDisconnected();
+  walletInfo.textContent = "Not connected";
+  document.getElementById("connectBtn").textContent = "🔗 Connect";
   localStorage.removeItem("arcliq_connected");
   log("❌ Disconnected (UI cleared)");
 }
-
-/* Toggle connect */
-connectBtn.addEventListener("click", async ()=>{
-  if(!signer){ await connectWallet(); } else { disconnectWallet(); }
+document.getElementById("connectBtn").addEventListener("click", async ()=>{
+  if(!signer) await connectWallet(); else disconnectWallet();
 });
-
-/* auto reconnect if flagged */
-if(localStorage.getItem("arcliq_connected")==="1"){ connectWallet().catch(()=>updateUIDisconnected()); }
+if(localStorage.getItem("arcliq_connected")==="1"){ connectWallet().catch(()=>disconnectWallet()); }
 
 /* react to metamask events */
 if(window.ethereum){
   window.ethereum.on("accountsChanged", (acc) => {
     if(acc.length===0){ disconnectWallet(); log("🔄 Account removed -> disconnected"); }
-    else { userAddress = acc[0]; provider && provider.getNetwork().then(n=>updateUIConnected(userAddress,n.chainId)); log("🔄 accountsChanged: "+JSON.stringify(acc)); }
+    else { userAddress = acc[0]; provider && provider.getNetwork().then(n=>walletInfo.textContent = `${userAddress} | chain ${n.chainId}`); log("🔄 accountsChanged: "+JSON.stringify(acc)); }
   });
   window.ethereum.on("chainChanged", (cid) => {
     const dec = (typeof cid === "string" && cid.startsWith("0x")) ? parseInt(cid,16) : cid;
-    provider && provider.getNetwork().then(n=>updateUIConnected(userAddress||"unknown",dec));
+    provider && provider.getNetwork().then(n=>walletInfo.textContent = `${userAddress||'unknown'} | chain ${dec}`);
     log("🔄 chainChanged: "+cid+" ("+dec+")");
   });
 }
 
-/* Helpers */
+/* ==================== CONTRACT HELPERS ==================== */
 function getContract(addr, abi){
   return new ethers.Contract(addr, abi, signer);
 }
+function getProviderContract(addr, abi){
+  return new ethers.Contract(addr, abi, provider);
+}
+async function getDecimals(tokenAddr){
+  try{
+    const key = tokenAddr.toLowerCase();
+    if(decimalsCache[key] !== undefined) return decimalsCache[key];
+    if(tokenAddr.toLowerCase() === NATIVE_USDC.toLowerCase()){
+      decimalsCache[key] = 18; // assume 18 for native
+      return 18;
+    }
+    const c = getProviderContract(tokenAddr, ERC20_ABI);
+    const d = await c.decimals();
+    decimalsCache[key] = Number(d);
+    return Number(d);
+  }catch(e){
+    // fallback to 18 if token call fails (but log)
+    log("⚠️ getDecimals failed for " + tokenAddr + " — defaulting to 18. Error: " + (e.message||e));
+    decimalsCache[tokenAddr.toLowerCase()] = 18;
+    return 18;
+  }
+}
+async function toWeiAmount(tokenAddr, humanString){
+  const trimmed = (humanString || "").toString().trim();
+  if(trimmed === "" || isNaN(Number(trimmed))) throw new Error("Invalid amount input");
+  const decimals = await getDecimals(tokenAddr);
+  return ethers.parseUnits(trimmed, decimals); // BigInt
+}
 
 /* Hide approve buttons when native involved */
-function checkNativeInputs(){
+function refreshApproveButtons(){
   const A = document.getElementById("pairTokenA").value.trim().toLowerCase();
   const B = document.getElementById("pairTokenB").value.trim().toLowerCase();
-  const hide = (A === NATIVE_USDC.toLowerCase() || B === NATIVE_USDC.toLowerCase());
-  document.getElementById("approveA").style.display = hide ? "none" : "inline-block";
-  document.getElementById("approveB").style.display = hide ? "none" : "inline-block";
+  document.getElementById("approveA").style.display = (A === NATIVE_USDC.toLowerCase()) ? "none" : "inline-block";
+  document.getElementById("approveB").style.display = (B === NATIVE_USDC.toLowerCase()) ? "none" : "inline-block";
 }
-document.getElementById("pairTokenA").addEventListener("input", checkNativeInputs);
-document.getElementById("pairTokenB").addEventListener("input", checkNativeInputs);
-checkNativeInputs();
+document.getElementById("pairTokenA").addEventListener("input", refreshApproveButtons);
+document.getElementById("pairTokenB").addEventListener("input", refreshApproveButtons);
+refreshApproveButtons();
 
-/* Create pair */
-document.getElementById("createPairBtn").addEventListener("click", async () => {
+/* ==================== PAIR / FACTORY =========== */
+document.getElementById("createPairBtn").addEventListener("click", async ()=>{
   try{
-    if(!signer){ alert("Connect wallet first"); return; }
+    if(!signer) { alert("Connect wallet first"); return; }
     const A = document.getElementById("pairTokenA").value.trim();
     const B = document.getElementById("pairTokenB").value.trim();
     const f = getContract(FACTORY, FACTORY_ABI);
     const btn = document.getElementById("createPairBtn");
     setProcessing(btn, true, "Creating...");
-    const tx = await f.createPair(A,B);
+    const tx = await f.createPair(A, B);
     log("⏳ createPair tx: " + tx.hash);
     await tx.wait();
     log("✅ Pair created");
@@ -247,127 +266,172 @@ document.getElementById("createPairBtn").addEventListener("click", async () => {
   }catch(e){ setProcessing(document.getElementById("createPairBtn"), false); log("❌ createPair failed: "+(e.message||e)); }
 });
 
-/* Get pair */
 document.getElementById("getPairBtn").addEventListener("click", async ()=>{
   try{
     const A = document.getElementById("pairTokenA").value.trim();
     const B = document.getElementById("pairTokenB").value.trim();
-    const f = getContract(FACTORY, FACTORY_ABI);
-    const pair = await f.getPair(A,B);
+    const f = getProviderContract(FACTORY, FACTORY_ABI);
+    const pair = await f.getPair(A, B);
     document.getElementById("pairAddr").textContent = pair === ethers.ZeroAddress ? "Pair not found" : "Pair: " + pair;
     log("🔎 Pair: " + pair);
   }catch(e){ log("❌ getPair failed: "+(e.message||e)); }
 });
 
-/* Approve helpers A/B */
+/* ==================== APPROVE (uses human amounts) =========== */
+const MAX_APPROVE = ethers.MaxUint256; // uses ethers constant
+
 document.getElementById("approveA").addEventListener("click", async ()=>{
   try{
     if(!signer){ alert("Connect wallet first"); return; }
-    const a = document.getElementById("pairTokenA").value.trim();
-    if(a.toLowerCase() === NATIVE_USDC.toLowerCase()){ alert("Token A is native USDC, no approve required."); return; }
-    const amt = document.getElementById("amtA").value.trim();
-    const erc = getContract(a, ERC20_ABI);
+    const token = document.getElementById("pairTokenA").value.trim();
+    const human = document.getElementById("amtA").value.trim();
+    if(token.toLowerCase() === NATIVE_USDC.toLowerCase()){ log("ℹ️ Token A is native USDC — no approve required."); return; }
+    const amount = await toWeiAmount(token, human);
+    const erc = getContract(token, ERC20_ABI);
     const btn = document.getElementById("approveA");
     setProcessing(btn, true, "Approving A...");
-    const tx = await erc.approve(ROUTER, amt);
+    // First try approve exact then fallback to MAX if needed
+    let tx = await erc.approve(ROUTER, amount);
     log("⏳ Approve A tx: " + tx.hash);
     await tx.wait();
+    // If approved amount smaller than intended next add can still fail; we offer Max option next time
     log("✅ Approved A");
     setProcessing(btn, false);
-  }catch(e){ setProcessing(document.getElementById("approveA"), false); log("❌ approveA failed: "+(e.message||e)); }
+  }catch(e){
+    setProcessing(document.getElementById("approveA"), false);
+    log("❌ approveA failed: " + (e.shortMessage || e.message || e));
+  }
 });
 
 document.getElementById("approveB").addEventListener("click", async ()=>{
   try{
     if(!signer){ alert("Connect wallet first"); return; }
-    const b = document.getElementById("pairTokenB").value.trim();
-    if(b.toLowerCase() === NATIVE_USDC.toLowerCase()){ alert("Token B is native USDC, no approve required."); return; }
-    const amt = document.getElementById("amtB").value.trim();
-    const erc = getContract(b, ERC20_ABI);
+    const token = document.getElementById("pairTokenB").value.trim();
+    const human = document.getElementById("amtB").value.trim();
+    if(token.toLowerCase() === NATIVE_USDC.toLowerCase()){ log("ℹ️ Token B is native USDC — no approve required."); return; }
+    const amount = await toWeiAmount(token, human);
+    const erc = getContract(token, ERC20_ABI);
     const btn = document.getElementById("approveB");
     setProcessing(btn, true, "Approving B...");
-    const tx = await erc.approve(ROUTER, amt);
+    let tx = await erc.approve(ROUTER, amount);
     log("⏳ Approve B tx: " + tx.hash);
     await tx.wait();
     log("✅ Approved B");
     setProcessing(btn, false);
-  }catch(e){ setProcessing(document.getElementById("approveB"), false); log("❌ approveB failed: "+(e.message||e)); }
+  }catch(e){
+    setProcessing(document.getElementById("approveB"), false);
+    log("❌ approveB failed: " + (e.shortMessage || e.message || e));
+  }
 });
 
-/* Add liquidity (handles native USDC via addLiquidityNative) */
+/* Quick helper to approve MAX (if user wants) */
+async function approveMax(tokenAddr, btnEl){
+  try{
+    if(!signer) throw new Error("Connect wallet");
+    if(tokenAddr.toLowerCase() === NATIVE_USDC.toLowerCase()) { log("Native doesn't need approve"); return; }
+    const erc = getContract(tokenAddr, ERC20_ABI);
+    setProcessing(btnEl, true, "Approving max...");
+    const tx = await erc.approve(ROUTER, MAX_APPROVE);
+    log("⏳ approveMax tx: " + tx.hash);
+    await tx.wait();
+    log("✅ Approve MAX done");
+    setProcessing(btnEl, false);
+  }catch(e){
+    setProcessing(btnEl, false);
+    log("❌ approveMax failed: " + (e.message||e));
+  }
+}
+
+/* ==================== ADD LIQUIDITY (human amounts) =========== */
 document.getElementById("addLpBtn").addEventListener("click", async ()=>{
   try{
     if(!signer){ alert("Connect wallet first"); return; }
     const A = document.getElementById("pairTokenA").value.trim();
     const B = document.getElementById("pairTokenB").value.trim();
-    const a = document.getElementById("amtA").value.trim();
-    const b = document.getElementById("amtB").value.trim();
-    const r = getContract(ROUTER, ROUTER_ABI);
+    const aHuman = document.getElementById("amtA").value.trim();
+    const bHuman = document.getElementById("amtB").value.trim();
     const btn = document.getElementById("addLpBtn");
     setProcessing(btn, true, "Adding LP...");
 
+    // convert to wei according to decimals
+    const a = await toWeiAmount(A, aHuman);
+    const b = await toWeiAmount(B, bHuman);
+
+    const r = getContract(ROUTER, ROUTER_ABI);
+
     let tx;
     if (A.toLowerCase() === NATIVE_USDC.toLowerCase()) {
-      // A is native -> call addLiquidityNative(token=B, amountToken=b) with value = a
+      // A is native USDC => call addLiquidityNative(B, b) with value = a
       tx = await r.addLiquidityNative(B, b, { value: a });
     } else if (B.toLowerCase() === NATIVE_USDC.toLowerCase()) {
-      // B is native -> call addLiquidityNative(token=A, amountToken=a) with value = b
+      // B is native
       tx = await r.addLiquidityNative(A, a, { value: b });
     } else {
       // both ERC20
-      tx = await r.addLiquidity(A,B,a,b);
+      tx = await r.addLiquidity(A, B, a, b);
     }
 
     log("⏳ addLiquidity tx: " + tx.hash);
     await tx.wait();
     log("✅ Liquidity added");
     setProcessing(btn, false);
-  }catch(e){ setProcessing(document.getElementById("addLpBtn"), false); log("❌ addLiquidity failed: "+(e.message||e)); }
+  }catch(e){
+    setProcessing(document.getElementById("addLpBtn"), false);
+    // show short message if available
+    log("❌ addLiquidity failed: " + (e.shortMessage || e.message || e));
+  }
 });
 
-/* Approve input for swap */
+/* ==================== SWAP (human amounts) =========== */
 document.getElementById("approveSwapBtn").addEventListener("click", async ()=>{
   try{
     if(!signer){ alert("Connect wallet first"); return; }
     const dir = document.getElementById("swapDir").value;
-    // decide which token is input for swap (if native, skip)
-    const input = dir === "usdc->token" ? document.getElementById("pairTokenA").value.trim() : document.getElementById("pairTokenB").value.trim();
-    if(input.toLowerCase() === NATIVE_USDC.toLowerCase()){ alert("Input is native USDC — no approve required."); return; }
-    const amt = document.getElementById("swapAmount").value.trim();
-    const erc = getContract(input, ERC20_ABI);
+    const inputToken = dir === "usdc->token" ? document.getElementById("pairTokenA").value.trim() : document.getElementById("pairTokenB").value.trim();
+    const amtHuman = document.getElementById("swapAmount").value.trim();
+    if(inputToken.toLowerCase() === NATIVE_USDC.toLowerCase()){ log("ℹ️ Input is native USDC — no approve required."); return; }
+    const amount = await toWeiAmount(inputToken, amtHuman);
+    const erc = getContract(inputToken, ERC20_ABI);
     const btn = document.getElementById("approveSwapBtn");
     setProcessing(btn, true, "Approving...");
-    const tx = await erc.approve(ROUTER, amt);
+    const tx = await erc.approve(ROUTER, amount);
     log("⏳ Approve swap tx: " + tx.hash);
     await tx.wait();
     log("✅ Approved for swap");
     setProcessing(btn, false);
-  }catch(e){ setProcessing(document.getElementById("approveSwapBtn"), false); log("❌ approve swap failed: "+(e.message||e)); }
+  }catch(e){
+    setProcessing(document.getElementById("approveSwapBtn"), false);
+    log("❌ approve swap failed: " + (e.shortMessage || e.message || e));
+  }
 });
 
-/* Swap */
 document.getElementById("swapBtn").addEventListener("click", async ()=>{
   try{
     if(!signer){ alert("Connect wallet first"); return; }
     const dir = document.getElementById("swapDir").value;
-    const amt = document.getElementById("swapAmount").value.trim();
+    const amtHuman = document.getElementById("swapAmount").value.trim();
     const tokenIn = dir === "usdc->token" ? document.getElementById("pairTokenA").value.trim() : document.getElementById("pairTokenB").value.trim();
     const tokenOut= dir === "usdc->token" ? document.getElementById("pairTokenB").value.trim() : document.getElementById("pairTokenA").value.trim();
+    const amount = await toWeiAmount(tokenIn, amtHuman);
     const r = getContract(ROUTER, ROUTER_ABI);
     const btn = document.getElementById("swapBtn");
     setProcessing(btn, true, "Swapping...");
 
-    // if tokenIn is native USDC, this contract likely expects swap with value; we call swap(tokenIn, tokenOut, amountIn)
-    // If router implements native-handling differently, you'll need to adjust.
-    const tx = await r.swap(tokenIn, tokenOut, amt, { value: tokenIn.toLowerCase() === NATIVE_USDC.toLowerCase() ? amt : 0 });
+    // if tokenIn is native USDC, include value in overrides (router must support)
+    const overrides = (tokenIn.toLowerCase() === NATIVE_USDC.toLowerCase()) ? { value: amount } : {};
+    const tx = await r.swap(tokenIn, tokenOut, amount, overrides);
     log("⏳ swap tx: " + tx.hash);
     await tx.wait();
     log("✅ Swap executed");
     setProcessing(btn, false);
-  }catch(e){ setProcessing(document.getElementById("swapBtn"), false); log("❌ swap failed: "+(e.message||e)); }
+  }catch(e){
+    setProcessing(document.getElementById("swapBtn"), false);
+    log("❌ swap failed: " + (e.shortMessage || e.message || e));
+  }
 });
 
-log("UI loaded — minimal Uniswap-like. Router: " + ROUTER);
+/* initialize */
+log("UI loaded — ARCLIQ final. Router: " + ROUTER);
 </script>
 </body>
 </html>
