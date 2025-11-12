@@ -3,229 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ARCLIQ — Arc Testnet</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<title>ARCLIQ Connect Test — ARC Testnet</title>
 <style>
-:root{
-  --bg:#f6fbff; --card:#ffffff; --accent:#5468ff; --muted:#64748b; --radius:12px;
-}
-*{box-sizing:border-box}
-body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:18px;color:#0f172a}
-.wrap{max-width:900px;margin:0 auto}
-h1{margin:0;font-size:24px}
-.subtitle{margin:4px 0 16px;color:var(--muted);font-size:13px}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:0 4px 14px rgba(10,20,30,.06);padding:16px;margin-bottom:12px}
-input,select,button{font-family:inherit;font-size:14px;border-radius:10px;padding:10px;border:1px solid #e6eef6}
-button{background:var(--accent);color:#fff;border:0;cursor:pointer;padding:10px 12px}
-.row{display:flex;gap:8px}
-.col{flex:1}
-.small{font-size:13px;color:var(--muted)}
-pre#logs{background:#071b26;color:#bfeef9;padding:10px;border-radius:10px;max-height:240px;overflow:auto}
-label{font-size:13px;color:#111827}
-footer{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
-@media(max-width:700px){.row{flex-direction:column}}
+body{font-family:sans-serif;background:#f5f8ff;margin:0;padding:2rem;color:#111}
+h1{margin:0 0 .5rem}
+button{background:#5468ff;color:#fff;border:0;padding:.8rem 1.2rem;
+border-radius:10px;font-size:1rem;cursor:pointer}
+#log{margin-top:1rem;background:#0a1724;color:#bfeef9;padding:1rem;
+border-radius:10px;min-height:120px;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>ARCLIQ</h1>
-  <div class="subtitle">Powered by ARC Network (Testnet)</div>
+<h1>ARCLIQ</h1>
+<div>Powered by ARC Network (Testnet)</div>
+<button id="connect">🔗 Connect MetaMask</button>
+<pre id="log">Waiting for action…</pre>
 
-  <div class="card">
-    <button id="connectBtn">🔗 Connect MetaMask</button>
-    <div id="walletInfo" class="small" style="margin-top:8px">Belum terhubung</div>
-  </div>
-
-  <div class="card">
-    <label><strong>Contracts (pre-filled)</strong></label>
-    <div class="row" style="margin-top:8px">
-      <input id="factoryAddr" class="col" value="0xA7e452f27836AED20081345B9149d4D1a722BF2a">
-      <input id="routerAddr" class="col" value="0x266cA3687FC92FD71D060e8bC5B45ec6b45a22AF">
-    </div>
-    <div class="row" style="margin-top:8px">
-      <input id="usdcAddr" class="col" value="0x4d02af17a29cda77416a1f60eae9092bb6d9c026">
-      <input id="tokenAddr" class="col" value="0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3">
-    </div>
-  </div>
-
-  <div class="card">
-    <label><strong>Create Pair</strong></label>
-    <div class="row" style="margin-top:8px">
-      <input id="pairA" class="col" placeholder="tokenA (USDC)" value="0x4d02af17a29cda77416a1f60eae9092bb6d9c026">
-      <input id="pairB" class="col" placeholder="tokenB (ARCLIQ)" value="0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3">
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button id="createPairBtn">🧱 Create Pair</button>
-      <button id="getPairBtn">🔎 Get Pair</button>
-    </div>
-    <div id="pairResult" class="small" style="margin-top:8px"></div>
-  </div>
-
-  <div class="card">
-    <label><strong>Add Liquidity</strong></label>
-    <div class="row" style="margin-top:8px">
-      <input id="liquidityA" class="col" placeholder="amount tokenA (wei)" value="1000000000000000000">
-      <input id="liquidityB" class="col" placeholder="amount tokenB (wei)" value="1000000000000000000">
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button id="approveUSDCBtn">Approve USDC</button>
-      <button id="approveTokenBtn">Approve Token</button>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button id="addLiquidityBtn">➕ Add Liquidity</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <label><strong>Swap</strong></label>
-    <div class="row" style="margin-top:8px">
-      <select id="swapDirection" style="width:160px">
-        <option value="usdc->token">USDC → ARCLIQ</option>
-        <option value="token->usdc">ARCLIQ → USDC</option>
-      </select>
-      <input id="swapAmount" class="col" placeholder="amount in wei" value="1000000000000000000">
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button id="approveSwapBtn">Approve Input</button>
-      <button id="swapBtn">🔁 Swap</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <strong>Logs</strong>
-    <pre id="logs">ARCLIQ ready. Connect wallet to begin.</pre>
-  </div>
-
-  <footer>ARCLIQ DEX — Arc Testnet</footer>
-</div>
-
-<!-- scripts -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 <script>
-const FACTORY = "0xA7e452f27836AED20081345B9149d4D1a722BF2a";
-const ROUTER = "0x266cA3687FC92FD71D060e8bC5B45ec6b45a22AF";
-const USDC = "0x4d02af17a29cda77416a1f60eae9092bb6d9c026";
-const TOKEN = "0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3";
-const ARC_RPC = "https://rpc.testnet.arc.network";
-const ARC_CHAIN_ID = 5042002;
+const logEl=document.getElementById("log");
+function log(msg){logEl.textContent+="\n"+msg;logEl.scrollTop=logEl.scrollHeight;}
 
-const ERC20_ABI = [
-  "function approve(address,uint256) returns (bool)",
-  "function transferFrom(address,address,uint256) returns (bool)"
-];
-const FACTORY_ABI = [
-  "function createPair(address,address) returns (address)",
-  "function getPair(address,address) view returns (address)"
-];
-const ROUTER_ABI = [
-  "function addLiquidity(address,address,uint256,uint256) returns (address)",
-  "function swap(address,address,uint256)"
-];
-
-let provider, signer, userAddress;
-
-const logs = document.getElementById("logs");
-function log(msg){logs.textContent += "\\n"+msg;logs.scrollTop=logs.scrollHeight;}
-
-async function connectWallet(){
+document.getElementById("connect").onclick=async()=>{
   try{
-    if(!window.ethereum) {alert("Install MetaMask first.");return;}
-    provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts",[]);
-    signer = await provider.getSigner();
-    userAddress = await signer.getAddress();
-    const net = await provider.getNetwork();
-    log(`✅ Connected: ${userAddress} | chain ${net.chainId}`);
-    document.getElementById("walletInfo").textContent = `Connected: ${userAddress}`;
-  }catch(e){log("❌ Connect failed: "+(e.message||e));}
-}
-
-document.getElementById("connectBtn").onclick = connectWallet;
-
-function getContract(addr, abi){return new ethers.Contract(addr, abi, signer);}
-
-document.getElementById("createPairBtn").onclick = async ()=>{
-  try{
-    if(!signer) return alert("Connect wallet first");
-    const f = getContract(FACTORY, FACTORY_ABI);
-    const tx = await f.createPair(USDC, TOKEN);
-    log("⏳ Creating pair: "+tx.hash);
-    await tx.wait();
-    log("✅ Pair created");
-  }catch(e){log("❌ createPair failed: "+(e.message||e));}
+    if(!window.ethereum){alert("Install MetaMask first");return;}
+    const provider=new window.ethereum.constructor(window.ethereum);
+    await window.ethereum.request({method:"eth_requestAccounts"});
+    const accounts=await window.ethereum.request({method:"eth_accounts"});
+    const chainId=await window.ethereum.request({method:"eth_chainId"});
+    log("✅ Connected address: "+accounts[0]);
+    log("🌐 Chain ID: "+chainId);
+  }catch(e){log("❌ "+(e.message||e));}
 };
 
-document.getElementById("getPairBtn").onclick = async ()=>{
-  try{
-    const f = getContract(FACTORY, FACTORY_ABI);
-    const pair = await f.getPair(USDC, TOKEN);
-    document.getElementById("pairResult").textContent = pair;
-    log("🔎 Pair: "+pair);
-  }catch(e){log("❌ getPair failed: "+(e.message||e));}
-};
-
-document.getElementById("approveUSDCBtn").onclick = async ()=>{
-  try{
-    const c = getContract(USDC, ERC20_ABI);
-    const amt = document.getElementById("liquidityA").value;
-    const tx = await c.approve(ROUTER, amt);
-    log("⏳ Approving USDC "+tx.hash);
-    await tx.wait();
-    log("✅ Approved USDC");
-  }catch(e){log("❌ Approve USDC failed: "+(e.message||e));}
-};
-
-document.getElementById("approveTokenBtn").onclick = async ()=>{
-  try{
-    const c = getContract(TOKEN, ERC20_ABI);
-    const amt = document.getElementById("liquidityB").value;
-    const tx = await c.approve(ROUTER, amt);
-    log("⏳ Approving TOKEN "+tx.hash);
-    await tx.wait();
-    log("✅ Approved TOKEN");
-  }catch(e){log("❌ Approve Token failed: "+(e.message||e));}
-};
-
-document.getElementById("addLiquidityBtn").onclick = async ()=>{
-  try{
-    const r = getContract(ROUTER, ROUTER_ABI);
-    const a = document.getElementById("liquidityA").value;
-    const b = document.getElementById("liquidityB").value;
-    const tx = await r.addLiquidity(USDC, TOKEN, a, b);
-    log("⏳ addLiquidity: "+tx.hash);
-    await tx.wait();
-    log("✅ Liquidity added");
-  }catch(e){log("❌ addLiquidity failed: "+(e.message||e));}
-};
-
-document.getElementById("approveSwapBtn").onclick = async ()=>{
-  try{
-    const dir=document.getElementById("swapDirection").value;
-    const input=(dir==="usdc->token")?USDC:TOKEN;
-    const c=getContract(input,ERC20_ABI);
-    const amt=document.getElementById("swapAmount").value;
-    const tx=await c.approve(ROUTER,amt);
-    log("⏳ Approving input "+tx.hash);
-    await tx.wait();
-    log("✅ Approved for swap");
-  }catch(e){log("❌ approve swap failed: "+(e.message||e));}
-};
-
-document.getElementById("swapBtn").onclick = async ()=>{
-  try{
-    const dir=document.getElementById("swapDirection").value;
-    const amt=document.getElementById("swapAmount").value;
-    const tokenIn=(dir==="usdc->token")?USDC:TOKEN;
-    const tokenOut=(dir==="usdc->token")?TOKEN:USDC;
-    const r=getContract(ROUTER,ROUTER_ABI);
-    const tx=await r.swap(tokenIn,tokenOut,amt);
-    log("⏳ Swapping "+tx.hash);
-    await tx.wait();
-    log("✅ Swap done");
-  }catch(e){log("❌ swap failed: "+(e.message||e));}
-};
-
-log("ARCLIQ DEX UI loaded. Open in MetaMask browser (ARC Testnet).");
+log("ARCLIQ ready. Tap Connect to test MetaMask integration.");
 </script>
 </body>
 </html>
