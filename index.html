@@ -3,39 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ARCLIQ Connect Test — ARC Testnet</title>
+<title>ARCLIQ Connect — Diagnostic Build</title>
 <style>
-body{font-family:sans-serif;background:#f5f8ff;margin:0;padding:2rem;color:#111}
-h1{margin:0 0 .5rem}
-button{background:#5468ff;color:#fff;border:0;padding:.8rem 1.2rem;
-border-radius:10px;font-size:1rem;cursor:pointer}
-#log{margin-top:1rem;background:#0a1724;color:#bfeef9;padding:1rem;
-border-radius:10px;min-height:120px;white-space:pre-wrap}
+body{font-family:sans-serif;background:#f3f6ff;margin:0;padding:2rem;color:#111}
+button{background:#5468ff;color:#fff;border:0;padding:12px 20px;
+border-radius:10px;font-size:16px;cursor:pointer}
+pre{background:#061e2e;color:#bfeef9;padding:12px;border-radius:10px;
+min-height:150px;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<h1>ARCLIQ</h1>
-<div>Powered by ARC Network (Testnet)</div>
+<h1>ARCLIQ Connect Debug</h1>
 <button id="connect">🔗 Connect MetaMask</button>
-<pre id="log">Waiting for action…</pre>
+<pre id="log">Initializing test...</pre>
 
 <script>
-const logEl=document.getElementById("log");
-function log(msg){logEl.textContent+="\n"+msg;logEl.scrollTop=logEl.scrollHeight;}
+const logBox=document.getElementById("log");
+function log(msg){
+  logBox.textContent+="\n"+msg;
+  logBox.scrollTop=logBox.scrollHeight;
+}
 
-document.getElementById("connect").onclick=async()=>{
+// Tes apakah window.ethereum terdeteksi
+if(typeof window.ethereum!=="undefined"){
+  log("✅ MetaMask terdeteksi di browser ini.");
+}else{
+  log("❌ MetaMask TIDAK terdeteksi! Pastikan buka di MetaMask app browser.");
+}
+
+// Pasang listener
+document.getElementById("connect").addEventListener("click",async()=>{
   try{
-    if(!window.ethereum){alert("Install MetaMask first");return;}
-    const provider=new window.ethereum.constructor(window.ethereum);
-    await window.ethereum.request({method:"eth_requestAccounts"});
-    const accounts=await window.ethereum.request({method:"eth_accounts"});
+    if(!window.ethereum){log("❌ window.ethereum tidak ada!");return;}
+    log("⏳ Meminta izin koneksi ke MetaMask...");
+    const accounts=await window.ethereum.request({method:"eth_requestAccounts"});
     const chainId=await window.ethereum.request({method:"eth_chainId"});
-    log("✅ Connected address: "+accounts[0]);
+    log("✅ Connected Address: "+accounts[0]);
     log("🌐 Chain ID: "+chainId);
-  }catch(e){log("❌ "+(e.message||e));}
-};
+  }catch(err){
+    log("❌ Gagal connect: "+(err.message||err));
+  }
+});
 
-log("ARCLIQ ready. Tap Connect to test MetaMask integration.");
+// Tambah event log untuk deteksi perubahan account/chain
+if(window.ethereum){
+  window.ethereum.on('accountsChanged',(acc)=>{
+    log("🔄 Account berubah: "+JSON.stringify(acc));
+  });
+  window.ethereum.on('chainChanged',(cid)=>{
+    log("🔄 Chain berubah: "+cid);
+  });
+}
 </script>
 </body>
 </html>
