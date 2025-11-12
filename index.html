@@ -1,121 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ARCLIQ — ARC DEX</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --border:#e6eaf1;
+    --text:#111827;
+    --muted:#6b7280;
+    --accent:#7c3aed;
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:Inter,system-ui;
+    color:var(--text);
+  }
+  header{
+    max-width:900px;
+    margin:28px auto 18px;
+    display:flex;
+    justify-content:space-between;
+    padding:0 16px;
+  }
+  .brand{
+    font-size:22px;
+    font-weight:600;
+  }
+  .sub{
+    font-size:12px;
+    color:var(--muted);
+  }
+  
+  .container{
+    max-width:900px;
+    margin:0 auto;
+    padding:0 16px;
+    display:flex;
+    gap:20px;
+  }
+  .card{
+    background:var(--card);
+    padding:18px;
+    border-radius:16px;
+    border:1px solid var(--border);
+    box-shadow:0 6px 20px rgba(0,0,0,0.04);
+    flex:1;
+  }
+  
+  h2{
+    margin:0 0 8px;
+    font-size:17px;
+  }
+  label{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:6px;
+    display:block;
+  }
+  input, select{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    font-size:14px;
+  }
+  button{
+    padding:12px 14px;
+    border-radius:12px;
+    border:0;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .primary{
+    background:var(--accent);
+    color:#fff;
+  }
+  .ghost{
+    background:#fff;
+    border:1px solid var(--border);
+    color:var(--muted);
+  }
+  #logs{
+    background:#0b1220;
+    color:#bde4ff;
+    margin-top:14px;
+    padding:12px;
+    min-height:120px;
+    border-radius:10px;
+    white-space:pre-wrap;
+  }
+  @media(max-width:880px){
+    .container{flex-direction:column}
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <div class="brand">ARCLIQ</div>
+    <div class="sub">Clean Uniswap-style DEX — ARC Network Testnet</div>
+  </div>
+  <button id="connectBtn" class="primary">🔗 Connect</button>
+</header>
+
+<div class="container">
+
+  <!-- SWAP -->
+  <div class="card">
+    <h2>Swap</h2>
+    <div class="sub">USDC ↔ ARCLIQ</div>
+
+    <label style="margin-top:14px">Direction</label>
+    <select id="swapDir">
+      <option value="usdc->token">USDC → ARCLIQ</option>
+      <option value="token->usdc">ARCLIQ → USDC</option>
+    </select>
+
+    <label style="margin-top:14px">Amount</label>
+    <input id="swapAmount" placeholder="amount in wei (1e18 = 1)">
+
+    <div style="display:flex; gap:10px; margin-top:14px">
+      <button id="approveSwapBtn" class="ghost">Approve</button>
+      <button id="swapBtn" class="primary">🔁 Swap</button>
+    </div>
+  </div>
+
+  <!-- ADD LP -->
+  <div class="card">
+    <h2>Add Liquidity</h2>
+    <div class="sub">USDC ↔ ARCLIQ</div>
+
+    <label style="margin-top:14px">Token A</label>
+    <input id="pairTokenA" value="0x3600000000000000000000000000000000000000">
+
+    <label style="margin-top:10px">Token B</label>
+    <input id="pairTokenB" value="0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3">
+
+    <div style="display:flex; gap:10px; margin-top:12px">
+      <button id="createPairBtn" class="ghost">🧱 Create Pair</button>
+      <button id="getPairBtn" class="ghost">🔎 Get Pair</button>
+    </div>
+
+    <label style="margin-top:14px">Amount A (wei)</label>
+    <input id="amtA" value="1000000000000000000">
+
+    <label style="margin-top:10px">Amount B (wei)</label>
+    <input id="amtB" value="1000000000000000000">
+
+    <div style="display:flex; gap:10px; margin-top:14px">
+      <button id="approveA" class="ghost">Approve A</button>
+      <button id="approveB" class="ghost">Approve B</button>
+      <button id="addLpBtn" class="primary">➕ Add LP</button>
+    </div>
+
+    <div id="pairAddr" class="sub" style="margin-top:12px"></div>
+  </div>
+
+</div>
+
+<div class="card" style="max-width:900px; margin:20px auto; border-radius:16px;">
+  <div class="sub" id="walletInfo">Not connected</div>
+  <pre id="logs">Ready</pre>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 <script>
-let provider, signer;
+/* CONFIG */
+const FACTORY = "0xA7e452f27836AED20081345B9149d4D1a722BF2a";
+const ROUTER  = "0x266cA3687FC92FD71D060e8bC5B45ec6b45a22AF";
+const USDC    = "0x3600000000000000000000000000000000000000";
+const TOKEN   = "0x3Be143cf70ACb16C7208673F1D3D2Ae403ebaEB3";
 
-// === CONFIG ===
-const ROUTER = "0xbdcb8cba012bc0c979875fef879b05e050e76d7d";
-const NATIVE_USDC = "0x3600000000000000000000000000000000000000";
-
+/* ABI */
+const ERC20_ABI = [
+  "function approve(address,uint256) returns (bool)",
+  "function balanceOf(address) view returns (uint)"
+];
+const FACTORY_ABI = [
+  "function createPair(address,address) returns (address)",
+  "function getPair(address,address) view returns (address)"
+];
 const ROUTER_ABI = [
-  "function addLiquidity(address tokenA, address tokenB, uint256 amtA, uint256 amtB) returns (address)",
-  "function addLiquidityNative(address token, uint256 amtToken) payable returns (address)",
-  "function swap(address tokenIn, address tokenOut, uint256 amountIn) returns (uint256)"
+  "function addLiquidity(address tokenA, address tokenB, uint amountA, uint amountB) external returns (address pair)",
+  "function swap(address tokenIn, address tokenOut, uint amountIn) external returns (uint amountOut)"
 ];
 
-// === UI HELPERS ===
-function log(msg){
-  const box = document.getElementById("logs");
-  box.value += msg + "\n";
-  box.scrollTop = box.scrollHeight;
+/* STATES */
+let provider=null, signer=null, userAddress=null;
+
+const log = (m)=>{
+  const e=document.getElementById("logs");
+  e.textContent += "\n"+m;
+  e.scrollTop=e.scrollHeight;
+};
+
+/* UI helpers */
+function refreshApprove(){
+  const A=document.getElementById("pairTokenA").value.toLowerCase();
+  const B=document.getElementById("pairTokenB").value.toLowerCase();
+  document.getElementById("approveA").style.display = (A===USDC.toLowerCase()) ? "none":"inline-block";
+  document.getElementById("approveB").style.display = (B===USDC.toLowerCase()) ? "none":"inline-block";
+}
+document.getElementById("pairTokenA").oninput=refreshApprove;
+document.getElementById("pairTokenB").oninput=refreshApprove;
+
+/* CONNECT */
+async function connect(){
+  provider=new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts",[]);
+  signer=await provider.getSigner();
+  userAddress=await signer.getAddress();
+
+  const n=await provider.getNetwork();
+  document.getElementById("walletInfo").textContent = userAddress+" | chain "+n.chainId;
+  document.getElementById("connectBtn").textContent="❌ Disconnect";
+  log("Connected "+userAddress);
+}
+function disconnect(){
+  provider=null; signer=null; userAddress=null;
+  document.getElementById("walletInfo").textContent="Not connected";
+  document.getElementById("connectBtn").textContent="🔗 Connect";
 }
 
-function setProcessing(btn, isLoading, text){
-  if(isLoading){
-    btn.disabled = true;
-    btn.innerText = text;
-  } else {
-    btn.disabled = false;
-    btn.innerText = btn.dataset.label;
-  }
-}
+/* CLICK CONNECT */
+document.getElementById("connectBtn").onclick=()=>{
+  if(!signer) connect(); else disconnect();
+};
 
-// === WALLET CONNECT ===
-document.getElementById("connectBtn").addEventListener("click", async ()=>{
-  try{
-    if (!window.ethereum){
-      alert("MetaMask not found");
-      return;
-    }
+/* CREATE PAIR */
+document.getElementById("createPairBtn").onclick=async()=>{
+  const A=document.getElementById("pairTokenA").value.trim();
+  const B=document.getElementById("pairTokenB").value.trim();
+  const f=new ethers.Contract(FACTORY,FACTORY_ABI,signer);
+  const tx=await f.createPair(A,B);
+  log("createPair tx="+tx.hash);
+  await tx.wait();
+  log("Pair created");
+};
 
-    provider = new ethers.BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
+/* GET PAIR */
+document.getElementById("getPairBtn").onclick=async()=>{
+  const A=document.getElementById("pairTokenA").value.trim();
+  const B=document.getElementById("pairTokenB").value.trim();
+  const f=new ethers.Contract(FACTORY,FACTORY_ABI,signer);
+  const p=await f.getPair(A,B);
+  document.getElementById("pairAddr").textContent=p;
+  log("Pair="+p);
+};
 
-    const addr = await signer.getAddress();
-    const chain = await signer.provider.getNetwork();
+/* APPROVE A */
+document.getElementById("approveA").onclick=async()=>{
+  const A=document.getElementById("pairTokenA").value.trim();
+  const amt=document.getElementById("amtA").value.trim();
+  const c=new ethers.Contract(A,ERC20_ABI,signer);
+  const tx=await c.approve(ROUTER,amt);
+  log("approveA tx="+tx.hash);
+  await tx.wait();
+  log("Approved A");
+};
 
-    log("✅ Connected: " + addr + " (chain " + chain.chainId + ")");
+/* APPROVE B */
+document.getElementById("approveB").onclick=async()=>{
+  const B=document.getElementById("pairTokenB").value.trim();
+  const amt=document.getElementById("amtB").value.trim();
+  const c=new ethers.Contract(B,ERC20_ABI,signer);
+  const tx=await c.approve(ROUTER,amt);
+  log("approveB tx="+tx.hash);
+  await tx.wait();
+  log("Approved B");
+};
 
-    document.getElementById("connectBtn").innerText = "Disconnect";
-  }catch(e){
-    log("❌ Connect failed: " + e.message);
-  }
-});
+/* ADD LP */
+document.getElementById("addLpBtn").onclick=async()=>{
+  const A=document.getElementById("pairTokenA").value.trim();
+  const B=document.getElementById("pairTokenB").value.trim();
+  const a=document.getElementById("amtA").value.trim();
+  const b=document.getElementById("amtB").value.trim();
+  const r=new ethers.Contract(ROUTER,ROUTER_ABI,signer);
+  const tx=await r.addLiquidity(A,B,a,b);
+  log("addLiquidity tx="+tx.hash);
+  await tx.wait();
+  log("LP Added");
+};
 
-// === APPROVE VISIBILITY (HIDE WHEN NATIVE USDC USED) ===
-function checkNative(){
-  const A = document.getElementById("pairTokenA").value.trim().toLowerCase();
-  const B = document.getElementById("pairTokenB").value.trim().toLowerCase();
-  const hide = (A === NATIVE_USDC || B === NATIVE_USDC);
-  document.getElementById("approveA").style.display = hide ? "none" : "inline-block";
-  document.getElementById("approveB").style.display = hide ? "none" : "inline-block";
-}
+/* APPROVE SWAP */
+document.getElementById("approveSwapBtn").onclick=async()=>{
+  const dir=document.getElementById("swapDir").value;
+  const input = (dir==="usdc->token") ? USDC : TOKEN;
+  const amt=document.getElementById("swapAmount").value.trim();
+  const c=new ethers.Contract(input,ERC20_ABI,signer);
+  const tx=await c.approve(ROUTER,amt);
+  log("approveSwap tx="+tx.hash);
+  await tx.wait();
+  log("Approve Swap OK");
+};
 
-document.getElementById("pairTokenA").addEventListener("input", checkNative);
-document.getElementById("pairTokenB").addEventListener("input", checkNative);
+/* SWAP */
+document.getElementById("swapBtn").onclick=async()=>{
+  const dir=document.getElementById("swapDir").value;
+  const amt=document.getElementById("swapAmount").value.trim();
+  const tokenIn = dir==="usdc->token"?USDC:TOKEN;
+  const tokenOut=dir==="usdc->token"?TOKEN:USDC;
+  const r=new ethers.Contract(ROUTER,ROUTER_ABI,signer);
+  const tx=await r.swap(tokenIn,tokenOut,amt);
+  log("swap tx="+tx.hash);
+  await tx.wait();
+  log("Swap Done");
+};
 
-// === ADD LP ===
-document.getElementById("addLpBtn").addEventListener("click", async ()=>{
-  try{
-    if(!signer){ return alert("Connect wallet first"); }
-
-    const A = document.getElementById("pairTokenA").value.trim();
-    const B = document.getElementById("pairTokenB").value.trim();
-    const a = document.getElementById("amtA").value.trim();
-    const b = document.getElementById("amtB").value.trim();
-
-    const router = new ethers.Contract(ROUTER, ROUTER_ABI, signer);
-    const btn = document.getElementById("addLpBtn");
-    setProcessing(btn, true, "Adding LP...");
-
-    let tx;
-    if (A.toLowerCase() === NATIVE_USDC){
-      tx = await router.addLiquidityNative(B, b, { value: a });
-    } else if (B.toLowerCase() === NATIVE_USDC){
-      tx = await router.addLiquidityNative(A, a, { value: b });
-    } else {
-      tx = await router.addLiquidity(A, B, a, b);
-    }
-
-    log("⏳ addLiquidity tx: " + tx.hash);
-    await tx.wait();
-    log("✅ Liquidity added!");
-    setProcessing(btn, false);
-  }catch(e){
-    log("❌ addLiquidity failed: " + (e.message || e));
-    setProcessing(document.getElementById("addLpBtn"), false);
-  }
-});
-
-// === SWAP ===
-document.getElementById("swapBtn").addEventListener("click", async ()=>{
-  try{
-    if(!signer){ return alert("Connect wallet first"); }
-
-    const tokenIn = document.getElementById("swapA").value.trim();
-    const tokenOut = document.getElementById("swapB").value.trim();
-    const amt = document.getElementById("swapAmount").value.trim();
-
-    const router = new ethers.Contract(ROUTER, ROUTER_ABI, signer);
-    const btn = document.getElementById("swapBtn");
-    setProcessing(btn, true, "Swapping...");
-
-    const tx = await router.swap(tokenIn, tokenOut, amt);
-    log("⏳ swap tx: " + tx.hash);
-    await tx.wait();
-    log("✅ Swap Success!");
-    setProcessing(btn, false);
-  }catch(e){
-    log("❌ swap failed: " + (e.message || e));
-    setProcessing(document.getElementById("swapBtn"), false);
-  }
-});
+refreshApprove();
+log("ARCLIQ Loaded");
 </script>
+
+</body>
+</html>
